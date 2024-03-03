@@ -1,10 +1,18 @@
 import { PublicInstanceProxyHandlers } from "./componentPulicInstance";
-
+import { initProps } from "./componentProps";
+import { shallowReadonly } from "../reactivity/reactive";
+import { emit } from "./componentEmit";
+import { initSlots } from "./componentSlots";
 export function createComponentInstance(vnode: VNode) {
   const component: Instance = {
     vnode,
     type: vnode.type,
+    setupState: {},
+    props: {},
+    emit: () => {},
+    slots: {},
   };
+  component.emit = emit.bind(null, component);
   return component;
 }
 /**
@@ -13,9 +21,8 @@ export function createComponentInstance(vnode: VNode) {
  * @description: 初始化Instance,去给Instance下加一些东西
  */
 export function setupComponent(instance: Instance) {
-  // initProps(instance)
-  // initSlots(instance)
-
+  initProps(instance, instance.vnode.props);
+  initSlots(instance, instance.vnode.children);
   setupStatefulComponent(instance);
 }
 /**
@@ -23,15 +30,17 @@ export function setupComponent(instance: Instance) {
  */
 function setupStatefulComponent(instance: Instance) {
   const Component = instance.type;
-  instance.proxy = new Proxy(
-    { _: instance },
-    PublicInstanceProxyHandlers
-  );
+  instance.proxy = new Proxy({ _: instance }, PublicInstanceProxyHandlers);
   //   get setup
   const { setup } = Component;
 
   if (setup) {
-    const setupResult = setup();
+    setcurrentInstance(instance);
+    const setupResult = setup(
+      instance.props && shallowReadonly(instance.props),
+      { emit: instance.emit }
+    );
+    setcurrentInstance(null);
     handleSetupResult(instance, setupResult);
   }
 }
@@ -53,4 +62,12 @@ function finishComponentSetup(instance: Instance) {
   if (Component.render) {
     instance.render = Component.render;
   }
+}
+
+let currentInstance: Instance | null = null;
+export function getcurrentInstance() {
+  return currentInstance;
+}
+function setcurrentInstance(instance: Instance | null) {
+  currentInstance = instance;
 }
