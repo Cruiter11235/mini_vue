@@ -1,9 +1,20 @@
+/*
+ * @Author: Jinjun Zhuang Cruiter11235@outlook.com
+ * @Date: 2024-03-01 14:49:42
+ * @LastEditors: Jinjun Zhuang Cruiter11235@outlook.com
+ * @LastEditTime: 2024-03-04 10:25:06
+ * @FilePath: \my_mini_vue\src\runtime-core\component.ts
+ * @Description:
+ *
+ * Copyright (c) 2024 by cruiter11235@outlook.com, All Rights Reserved.
+ */
 import { PublicInstanceProxyHandlers } from "./componentPulicInstance";
 import { initProps } from "./componentProps";
 import { shallowReadonly } from "../reactivity/reactive";
 import { emit } from "./componentEmit";
 import { initSlots } from "./componentSlots";
-export function createComponentInstance(vnode: VNode) {
+export function createComponentInstance(vnode: VNode, parent: any) {
+  console.log(parent);
   const component: Instance = {
     vnode,
     type: vnode.type,
@@ -11,6 +22,8 @@ export function createComponentInstance(vnode: VNode) {
     props: {},
     emit: () => {},
     slots: {},
+    parent: parent || {},
+    provides: parent?.provides || {},
   };
   component.emit = emit.bind(null, component);
   return component;
