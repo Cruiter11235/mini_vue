@@ -1,3 +1,13 @@
+/*
+ * @Author: Jinjun Zhuang Cruiter11235@outlook.com
+ * @Date: 2024-02-27 19:10:23
+ * @LastEditors: Jinjun Zhuang Cruiter11235@outlook.com
+ * @LastEditTime: 2024-03-05 10:32:51
+ * @FilePath: \my_mini_vue\src\reactivity\basicHandler.ts
+ * @Description:
+ *
+ * Copyright (c) 2024 by cruiter11235@outlook.com, All Rights Reserved.
+ */
 import { track, trigger } from "./effect";
 import { reactive, readonly } from "./reactive";
 import { extend, isObject } from "./index";

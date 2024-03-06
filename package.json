@@ -7,7 +7,9 @@
   "module": "lib/guide-mini-vue.esm.js",
   "scripts": {
     "test": "vitest",
-    "build": "rollup -c rollup.config.js"
+    "build": "rollup -c rollup.config.js",
+    "build:type": "tsc -b tsconfig.types.json",
+    "hello": "echo hello world!"
   },
   "keywords": [],
   "author": "",

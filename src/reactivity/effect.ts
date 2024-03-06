@@ -3,7 +3,7 @@ import { effect } from './effect';
  * @Author: Jinjun Zhuang Cruiter11235@outlook.com
  * @Date: 2024-02-26 11:07:45
  * @LastEditors: Jinjun Zhuang Cruiter11235@outlook.com
- * @LastEditTime: 2024-02-29 23:23:47
+ * @LastEditTime: 2024-03-06 11:38:34
  * @FilePath: \my_mini_vue\src\reactivity\effect.ts
  * @Description:
  *
@@ -24,8 +24,8 @@ function cleanupEffect(effect: any) {
 export class ReactiveEffect {
   private _fn: any;
   public scheduler: Function | undefined;
-  deps = [];
-  active: boolean = true;
+  public deps:any[] = [];
+  public active: boolean = true;
   constructor(fn: any, scheduler?: any) {
     this._fn = fn;
     this.scheduler = scheduler;
@@ -34,7 +34,7 @@ export class ReactiveEffect {
     if (!this.active) {
       return this._fn();
     }
-    // 进入到下面一定是set时触发的
+    // 进入到下面一定是set时触发的或者是effect
     activeEffect = this;
     // 准备收集依赖
     shouldTrack = true;
@@ -63,7 +63,13 @@ export function track(target: any, key: any) {
 }
 export function trackEffect(dep: any) {
   if (!dep.has(activeEffect)) dep.add(activeEffect);
-  activeEffect?.deps.push(dep);
+  if (
+    activeEffect &&
+    Object.prototype.hasOwnProperty.call(activeEffect, "deps") &&
+    Array.isArray(activeEffect.deps)
+  ) {
+    activeEffect.deps.push(dep);
+  }
 }
 export function trigger(target: any, key: any) {
   let depMap = targetMap.get(target);
@@ -90,7 +96,9 @@ export function effect(fn: any, options: any = {}) {
   _effect.run();
   const runner = _effect.run.bind(_effect);
   //   反向绑定effect
-  runner.effect = _effect;
+  // Object.assign(runner, _effect);
+  Object.defineProperty(runner, "effect", { value: _effect });
+  // runner.effect = _effect;
   return runner;
 }
 

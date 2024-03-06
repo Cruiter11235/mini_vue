@@ -2,7 +2,7 @@
  * @Author: Jinjun Zhuang Cruiter11235@outlook.com
  * @Date: 2024-03-01 17:03:52
  * @LastEditors: Jinjun Zhuang Cruiter11235@outlook.com
- * @LastEditTime: 2024-03-04 09:55:47
+ * @LastEditTime: 2024-03-06 11:09:13
  * @FilePath: \my_mini_vue\src\global.d.ts
  * @Description:
  *
@@ -22,9 +22,9 @@ interface Instance {
   setupState: any;
   render?: any;
   props: any;
-  emit: Function = () => {};
+  emit: Function;
   slots?: any;
-  parent: any = {};
-  provides: StringKey = {};
+  parent: any;
+  provides: StringKey;
 }
 type StringKey = Record<string, any>;
