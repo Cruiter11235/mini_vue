@@ -18,9 +18,10 @@ export function createVNode(type: any, props: any = {}, children: any = {}) {
     children,
     el: null,
     shapeFlag: getShapeFlag(type),
+    key: props && props.key,
   };
 
-  if (typeof children === "string") {
+  if (typeof children === "string" || typeof children === "number") {
     vnode.shapeFlag = vnode.shapeFlag | ShapeFlags.TEXTCHILDREN;
   } else if (Array.isArray(children)) {
     vnode.shapeFlag = vnode.shapeFlag | ShapeFlags.ARRAYCHILDREN;

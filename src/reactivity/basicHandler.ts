@@ -10,7 +10,7 @@
  */
 import { track, trigger } from "./effect";
 import { reactive, readonly } from "./reactive";
-import { extend, isObject } from "./index";
+import { extend, isObject } from "../share";
 const get = createGetter();
 const set = createSetter();
 const readonlyGet = createGetter(true);

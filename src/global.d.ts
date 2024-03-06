@@ -2,7 +2,7 @@
  * @Author: Jinjun Zhuang Cruiter11235@outlook.com
  * @Date: 2024-03-01 17:03:52
  * @LastEditors: Jinjun Zhuang Cruiter11235@outlook.com
- * @LastEditTime: 2024-03-06 11:09:13
+ * @LastEditTime: 2024-03-06 18:22:16
  * @FilePath: \my_mini_vue\src\global.d.ts
  * @Description:
  *
@@ -14,6 +14,7 @@ interface VNode {
   children?: any;
   el?: HTMLElement | null | any;
   shapeFlag: number;
+  key: any;
 }
 interface Instance {
   vnode: VNode;
@@ -26,5 +27,7 @@ interface Instance {
   slots?: any;
   parent: any;
   provides: StringKey;
+  isMounted: boolean;
+  subTree: any;
 }
 type StringKey = Record<string, any>;

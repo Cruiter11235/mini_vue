@@ -2,7 +2,7 @@
  * @Author: Jinjun Zhuang Cruiter11235@outlook.com
  * @Date: 2024-03-01 14:49:42
  * @LastEditors: Jinjun Zhuang Cruiter11235@outlook.com
- * @LastEditTime: 2024-03-04 10:25:06
+ * @LastEditTime: 2024-03-06 20:52:53
  * @FilePath: \my_mini_vue\src\runtime-core\component.ts
  * @Description:
  *
@@ -13,8 +13,8 @@ import { initProps } from "./componentProps";
 import { shallowReadonly } from "../reactivity/reactive";
 import { emit } from "./componentEmit";
 import { initSlots } from "./componentSlots";
+import { ProxyRefs } from "../reactivity/ref";
 export function createComponentInstance(vnode: VNode, parent: any) {
-  console.log(parent);
   const component: Instance = {
     vnode,
     type: vnode.type,
@@ -24,6 +24,8 @@ export function createComponentInstance(vnode: VNode, parent: any) {
     slots: {},
     parent: parent || {},
     provides: parent?.provides || {},
+    isMounted: false,
+    subTree: null,
   };
   component.emit = emit.bind(null, component);
   return component;
@@ -62,7 +64,7 @@ function setupStatefulComponent(instance: Instance) {
  */
 function handleSetupResult(instance: Instance, setupResult: any) {
   if (typeof setupResult === "object") {
-    instance.setupState = setupResult;
+    instance.setupState = ProxyRefs(setupResult);
   }
 
   finishComponentSetup(instance);
