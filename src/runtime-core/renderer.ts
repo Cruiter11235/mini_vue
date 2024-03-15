@@ -2,7 +2,7 @@
  * @Author: Jinjun Zhuang Cruiter11235@outlook.com
  * @Date: 2024-03-01 14:42:08
  * @LastEditors: Jinjun Zhuang Cruiter11235@outlook.com
- * @LastEditTime: 2024-03-06 22:40:34
+ * @LastEditTime: 2024-03-08 18:21:04
  * @FilePath: \my_mini_vue\src\runtime-core\renderer.ts
  * @Description:
  *
@@ -15,6 +15,7 @@ import { ShapeFlags } from "./shapeFlags";
 import { Fragment, Text } from "./vnode";
 import { createAppAPI } from "./createApp";
 import { effect } from "src/reactivity/effect";
+import { getSequence } from "src/share";
 
 // 传入options，控制如何去创建对象
 export function createRenderer(options: any) {
@@ -43,6 +44,7 @@ export function createRenderer(options: any) {
     anchor: any
   ) {
     const { type, shapeFlag } = vnode;
+    // process VNode
     switch (type) {
       case Fragment:
         processFragment(prev, vnode, container, parentComponent, anchor);
@@ -116,6 +118,7 @@ export function createRenderer(options: any) {
     if (!prev) return;
     const { shapeFlag } = vnode;
     const prevShapeFlag = prev.shapeFlag;
+    // 获得两个虚拟节点的children
     const c1 = prev.children;
     const c2 = vnode.children;
     if (shapeFlag & ShapeFlags.TEXTCHILDREN) {
@@ -139,6 +142,12 @@ export function createRenderer(options: any) {
       }
     }
   }
+  /**
+   * @description compare two vnode
+   * @param n1
+   * @param n2
+   * @returns
+   */
   function isSameVNodeType(n1: VNode, n2: VNode) {
     // type
     return n1.type === n2.type && n1.key === n2.key;
@@ -182,7 +191,7 @@ export function createRenderer(options: any) {
     if (i > e1) {
       if (i <= e2) {
         const nextPos = e2 + 1;
-        const anchor = nextPos + 1 < l2 ? c2[nextPos].el : null;
+        const anchor = nextPos < l2 ? c2[nextPos].el : null;
         while (i <= e2) {
           patch(null, c2[i], container, parentComponent, anchor);
           i++;
@@ -194,8 +203,77 @@ export function createRenderer(options: any) {
         i++;
       }
     } else {
+      // 中间对比
+      let s1 = i;
+      let s2 = i;
+      const keyToNewIndexMap = new Map();
+      // toBePatched
+      const toBePatched = e2 - s2 + 1;
+      const newIndexToOldIndexMap = new Array(toBePatched);
+      newIndexToOldIndexMap.fill(0);
+      let moved = false;
+      let maxNewIndexSoFar = 0;
+
+      for (let i = s2; i <= e2; i++) {
+        const nextChild = c2[i];
+        keyToNewIndexMap.set(nextChild.key, i);
+      }
+      let patched = 0;
+
+      for (let i = s1; i <= e1; i++) {
+        const prevChild = c1[i];
+        // 如果新节点全被patch完成
+        if (patched >= toBePatched) {
+          hostRemove(prevChild.el);
+          continue;
+        }
+        // 获取newnode的index
+        let newIndex;
+        if (prevChild.key !== null) {
+          newIndex = keyToNewIndexMap.get(prevChild.key);
+        } else {
+          for (let j = s2; j < e2; j++) {
+            if (isSameVNodeType(prevChild, c2[j])) {
+              newIndex = j;
+              break;
+            }
+          }
+        }
+
+        if (newIndex === undefined) {
+          hostRemove(prevChild.el);
+        } else {
+          if (newIndex < maxNewIndexSoFar) {
+            moved = true;
+          } else {
+            maxNewIndexSoFar = newIndex;
+          }
+          // 这里不能为0，从1开始
+          newIndexToOldIndexMap[newIndex - s2] = i + 1;
+          patch(prevChild, c2[newIndex], container, parentComponent, null);
+          patched++;
+        }
+      }
+      // 最长递增子序列
+      const increasingNewIndexSequence = getSequence(newIndexToOldIndexMap);
+      let j = 0;
+      for (let i = toBePatched - 1; i >= 0; i--) {
+        const nextIndex = s2 + i;
+        const nextChild = c2[nextIndex];
+        const anchor = nextIndex + 1 < l2 ? c2[nextIndex + 1].el : null;
+        if (newIndexToOldIndexMap[i] === 0) {
+          patch(null, nextChild, container, parentComponent, anchor);
+        } else if (moved) {
+          if (j < 0 || i !== increasingNewIndexSequence[j]) {
+            // move
+            hostInsert(nextChild.el, container, anchor);
+          } else {
+            j--;
+          }
+        }
+      }
     }
-    console.log(i);
+    // console.log(i);
   }
   function unmountChildren(children: any) {
     for (let i = 0; i < children.length; i++) {

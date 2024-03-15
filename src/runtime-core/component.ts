@@ -26,6 +26,7 @@ export function createComponentInstance(vnode: VNode, parent: any) {
     provides: parent?.provides || {},
     isMounted: false,
     subTree: null,
+    proxy: null,
   };
   component.emit = emit.bind(null, component);
   return component;
