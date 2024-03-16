@@ -9,12 +9,14 @@
  * Copyright (c) 2024 by cruiter11235@outlook.com, All Rights Reserved.
  */
 interface VNode {
+  vnode: VNode;
   type: any;
   props?: any;
   children?: any;
   el?: HTMLElement | null | any;
   shapeFlag: number;
   key: any;
+  component?: Instance;
 }
 interface Instance {
   vnode: VNode;
@@ -29,5 +31,10 @@ interface Instance {
   provides: StringKey;
   isMounted: boolean;
   subTree: any;
+  update?: any;
+  next: VNode | null;
+}
+interface Context {
+  source: string;
 }
 type StringKey = Record<string, any>;

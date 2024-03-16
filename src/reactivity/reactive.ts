@@ -8,7 +8,6 @@
  *
  * Copyright (c) 2024 by cruiter11235@outlook.com, All Rights Reserved.
  */
-import { track, trigger } from "./effect";
 import {
   MutibleHandler,
   ReadonlyHandler,

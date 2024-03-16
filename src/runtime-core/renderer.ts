@@ -16,6 +16,8 @@ import { Fragment, Text } from "./vnode";
 import { createAppAPI } from "./createApp";
 import { effect } from "src/reactivity/effect";
 import { getSequence } from "src/share";
+import { shouldUpdateComponent } from "./componentUpdateUtils";
+import { queueJobs } from "./scheduler";
 
 // 传入options，控制如何去创建对象
 export function createRenderer(options: any) {
@@ -203,23 +205,30 @@ export function createRenderer(options: any) {
         i++;
       }
     } else {
-      // 中间对比
+      // 中间对比  ！！！！！！
       let s1 = i;
       let s2 = i;
+      // 新节点的中间段的(VNode.key -> index)
       const keyToNewIndexMap = new Map();
-      // toBePatched
+      // toBePatched 即中间段的长度
       const toBePatched = e2 - s2 + 1;
+      // (relative newNode.index (start with zero)-> oldNode.index)
       const newIndexToOldIndexMap = new Array(toBePatched);
+      // init the map
       newIndexToOldIndexMap.fill(0);
+      //
       let moved = false;
       let maxNewIndexSoFar = 0;
 
+      // (newNode -> absolute index)
       for (let i = s2; i <= e2; i++) {
         const nextChild = c2[i];
         keyToNewIndexMap.set(nextChild.key, i);
       }
+      // have patched count
       let patched = 0;
 
+      // 处理每一个old child
       for (let i = s1; i <= e1; i++) {
         const prevChild = c1[i];
         // 如果新节点全被patch完成
@@ -229,10 +238,12 @@ export function createRenderer(options: any) {
         }
         // 获取newnode的index
         let newIndex;
+        // 如果当前结点在新的children中存在
         if (prevChild.key !== null) {
           newIndex = keyToNewIndexMap.get(prevChild.key);
         } else {
-          for (let j = s2; j < e2; j++) {
+          // 寻找old child的new index
+          for (let j = s2; j <= e2; j++) {
             if (isSameVNodeType(prevChild, c2[j])) {
               newIndex = j;
               break;
@@ -240,9 +251,11 @@ export function createRenderer(options: any) {
           }
         }
 
+        // 找不到new index
         if (newIndex === undefined) {
           hostRemove(prevChild.el);
         } else {
+          // 发生错序
           if (newIndex < maxNewIndexSoFar) {
             moved = true;
           } else {
@@ -255,13 +268,17 @@ export function createRenderer(options: any) {
         }
       }
       // 最长递增子序列
-      const increasingNewIndexSequence = getSequence(newIndexToOldIndexMap);
-      let j = 0;
+      const increasingNewIndexSequence = moved
+        ? getSequence(newIndexToOldIndexMap)
+        : [];
+      //  j 为最长上升子序列的长度
+      let j = increasingNewIndexSequence.length - 1;
       for (let i = toBePatched - 1; i >= 0; i--) {
         const nextIndex = s2 + i;
         const nextChild = c2[nextIndex];
         const anchor = nextIndex + 1 < l2 ? c2[nextIndex + 1].el : null;
         if (newIndexToOldIndexMap[i] === 0) {
+          // 新index在旧的index中没有索引
           patch(null, nextChild, container, parentComponent, anchor);
         } else if (moved) {
           if (j < 0 || i !== increasingNewIndexSequence[j]) {
@@ -273,7 +290,6 @@ export function createRenderer(options: any) {
         }
       }
     }
-    // console.log(i);
   }
   function unmountChildren(children: any) {
     for (let i = 0; i < children.length; i++) {
@@ -306,7 +322,22 @@ export function createRenderer(options: any) {
     parentComponent: any,
     anchor: any
   ) {
-    mountComponent(vnode, container, parentComponent, anchor);
+    if (!prev) {
+      mountComponent(vnode, container, parentComponent, anchor);
+    } else {
+      updateComponent(prev, vnode);
+    }
+  }
+  function updateComponent(prev: VNode, vnode: VNode) {
+    if (shouldUpdateComponent(prev, vnode)) {
+      let instance = (vnode.component = prev.component);
+      if (!instance) return;
+      instance.next = vnode;
+      instance.update();
+    } else {
+      vnode.el = prev.el;
+      vnode.vnode = vnode;
+    }
   }
   // 挂载dom元素
   function mountElement(
@@ -350,12 +381,15 @@ export function createRenderer(options: any) {
    * @description 挂载组件
    */
   function mountComponent(
-    InitalVnode: any,
+    InitalVnode: VNode,
     container: HTMLElement,
     parentComponent: any,
     anchor: any
   ) {
-    const instance = createComponentInstance(InitalVnode, parentComponent);
+    const instance = (InitalVnode.component = createComponentInstance(
+      InitalVnode,
+      parentComponent
+    ));
     setupComponent(instance);
     setupRenderEffect(instance, InitalVnode, container, anchor);
   }
@@ -366,25 +400,42 @@ export function createRenderer(options: any) {
     container: HTMLElement,
     anchor: any
   ) {
-    effect(() => {
-      if (!instance.isMounted) {
-        const { proxy } = instance;
-        const subTree = (instance.subTree = instance.render.call(proxy));
-        //   vnode -> patch
-        //   vnode -> element
-        patch(null, subTree, container, instance, anchor);
-        InitialVnode.el = subTree.el;
-        instance.isMounted = true;
-      } else {
-        const { proxy } = instance;
-        const subTree = instance.render.call(proxy);
-        const preSubTree = instance.subTree;
-        patch(preSubTree, subTree, container, instance, anchor);
-        InitialVnode.el = subTree.el;
+    instance.update = effect(
+      () => {
+        if (!instance.isMounted) {
+          const { proxy } = instance;
+          const subTree = (instance.subTree = instance.render.call(proxy));
+          //   vnode -> patch
+          //   vnode -> element
+          patch(null, subTree, container, instance, anchor);
+          InitialVnode.el = subTree.el;
+          instance.isMounted = true;
+        } else {
+          console.log("update");
+          const { next, vnode } = instance;
+          if (next) {
+            next.el = vnode.el;
+            updateComponentRender(instance, next);
+          }
+          const { proxy } = instance;
+          const subTree = instance.render.call(proxy);
+          const preSubTree = instance.subTree;
+          patch(preSubTree, subTree, container, instance, anchor);
+          InitialVnode.el = subTree.el;
+        }
+      },
+      {
+        scheduler() {
+          queueJobs(instance.update);
+        },
       }
-    });
+    );
   }
-
+  function updateComponentRender(instance: Instance, nextVnode: VNode) {
+    instance.vnode = nextVnode;
+    instance.props = nextVnode.props;
+    instance.next = null;
+  }
   // 闭包导出function
   return {
     createApp: createAppAPI(render),
