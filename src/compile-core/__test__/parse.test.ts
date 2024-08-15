@@ -1,54 +1,94 @@
 import { NodeType } from "../ast";
-import { baseParser } from "../parser";
+import { baseParse } from "../parser";
 
 describe("Parse", () => {
   describe("interpolation", () => {
-    test("simple", () => {
-      const ast = baseParser("   {{message}}  ");
-      //root
+    test("simple interpolation", () => {
+      const ast = baseParse("{{ message  }}");
       expect(ast.children[0]).toStrictEqual({
-        type: NodeType.INTERPOLATION,
+        type: "interpolation",
         content: {
-          type: NodeType.SIMPLE_EXPRESSION,
+          type: "simple_expression",
           content: "message",
         },
       });
     });
+  });
 
-    test("parse element", () => {
-      const ast = baseParser("<div></div>aaaa");
+  describe("element", () => {
+    it("simple element div", () => {
+      const ast = baseParse("<div></div>");
       expect(ast.children[0]).toStrictEqual({
         type: NodeType.ELEMENT,
         tag: "div",
         children: [],
       });
     });
+  });
 
-    test("parse text", () => {
-      const ast = baseParser("some text");
+  describe("text", () => {
+    it("simple text", () => {
+      const ast = baseParse("some text");
       expect(ast.children[0]).toStrictEqual({
         type: NodeType.TEXT,
         content: "some text",
       });
     });
+  });
 
-    test("multiple text", () => {
-      const ast = baseParser("<p>hi,{{message}}</p>");
-      console.log(ast.children[0].children);
-      expect(ast.children[0]).toStrictEqual({
-        type: NodeType.ELEMENT,
-        tag: "p",
-        children: [
-          { type: NodeType.TEXT, content: "hi," },
-          {
-            type: NodeType.INTERPOLATION,
-            content: {
-              type: NodeType.SIMPLE_EXPRESSION,
-              content: "message",
-            },
+  test("complex template", () => {
+    const ast = baseParse("<p>hi,{{message}}</p>");
+    expect(ast.children[0]).toStrictEqual({
+      type: NodeType.ELEMENT,
+      tag: "p",
+      children: [
+        {
+          type: NodeType.TEXT,
+          content: "hi,",
+        },
+        {
+          type: NodeType.INTERPOLATION,
+          content: {
+            type: "simple_expression",
+            content: "message",
           },
-        ],
-      });
+        },
+      ],
     });
+  });
+
+  test("recursive template", () => {
+    const ast = baseParse("<div><p>hi</p>{{message}}</div>");
+    expect(ast.children[0]).toStrictEqual({
+      type: NodeType.ELEMENT,
+      tag: "div",
+      children: [
+        {
+          type: NodeType.ELEMENT,
+          tag: "p",
+          children: [
+            {
+              type: NodeType.TEXT,
+              content: "hi",
+            },
+          ],
+        },
+        {
+          type: NodeType.INTERPOLATION,
+          content: {
+            type: "simple_expression",
+            content: "message",
+          },
+        },
+      ],
+    });
+  });
+
+  test("lost end tag", () => {
+    expect(() => {
+      baseParse("<div><span></div>");
+    }).toThrow("缺少结束标签");
+
+    baseParse("<html><div>1233</div></html>");
   });
 });

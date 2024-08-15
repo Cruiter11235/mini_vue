@@ -9,7 +9,7 @@
  * Copyright (c) 2024 by cruiter11235@outlook.com, All Rights Reserved.
  */
 interface VNode {
-  vnode: VNode;
+  vnode?: VNode;
   type: any;
   props?: any;
   children?: any;
