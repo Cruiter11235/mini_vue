@@ -1,13 +1,11 @@
 import { NodeType } from "./ast";
+import { helperMapName, TO_DISPLAY_STRING } from "./runtimeHelpers";
 
 export function transform(root: any, options = {}) {
-  // create context
   const context = createTransformContext(root, options);
-  // 1.遍历-深度优先搜索
   traverseNode(root, context);
-
   createRootCodegen(root);
-  // root.childrenNode
+  root.helpers = [...context.helpers.keys()]; // 解构出所有的helperKey
 }
 /**
  * create context
@@ -19,6 +17,10 @@ function createTransformContext(root: any, options: any): any {
   const context = {
     root,
     nodeTransforms: options.nodeTransforms || [],
+    helpers: new Map(),
+    helper(key: string) {
+      context.helpers.set(key, 1);
+    },
   };
   return context;
 }
@@ -30,10 +32,20 @@ function createTransformContext(root: any, options: any): any {
 function traverseNode(node: any, context: any) {
   const nodeTransforms = context.nodeTransforms;
   for (let i = 0; i < nodeTransforms.length; i++) {
-    const transform = nodeTransforms[i];
-    transform(node);
+    const transformFunc = nodeTransforms[i];
+    transformFunc(node);
   }
-  traverseChildren(node, context);
+  switch (node.type) {
+    case NodeType.INTERPOLATION:
+      context.helper(helperMapName[TO_DISPLAY_STRING]);
+      break;
+    case NodeType.ROOT:
+    case NodeType.ELEMENT:
+      traverseChildren(node, context);
+      break;
+    default:
+      break;
+  }
 }
 /**
  * 遍历子节点
@@ -49,6 +61,10 @@ function traverseChildren(node: any, context: any) {
     }
   }
 }
+/**
+ * 设置生成代码的入口节点
+ * @param root
+ */
 function createRootCodegen(root: any) {
   root.codegenNode = root.children[0];
 }

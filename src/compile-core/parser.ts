@@ -124,6 +124,7 @@ function parseTextData(context: Context, length: number) {
  */
 function createRoot(children: any) {
   return {
+    type: NodeType.ROOT,
     children,
   };
 }
