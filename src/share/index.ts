@@ -8,7 +8,9 @@ export function isObject(val: any) {
 export function hasChanged(oldValue: any, newValue: any) {
   return !Object.is(oldValue, newValue);
 }
-
+export function isString(value: any) {
+  return typeof value === "string";
+}
 class Stack<T> {
   public items: T[];
   constructor() {

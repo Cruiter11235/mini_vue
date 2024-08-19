@@ -2,6 +2,8 @@ import { generator } from "../codegen";
 import { baseParse } from "../parser";
 import { transform } from "./../transform";
 import { transformExpression } from "./../transformExpression";
+import { transformElement } from "./../trasnformElement";
+import { TransformText } from "./../transformText";
 
 describe("codegen", () => {
   it("string", () => {
@@ -19,11 +21,11 @@ describe("codegen", () => {
     expect(code).toMatchSnapshot();
   });
   it("element", () => {
-    const ast = baseParse("<div>hi,{{mini-vue}}</div>");
+    const ast = baseParse("<div>hi,{{message}}</div>");
     transform(ast, {
-      nodeTransforms: [transformExpression],
+      nodeTransforms: [transformExpression, transformElement, TransformText],
     });
-    console.log(ast);
     const { code } = generator(ast);
+    expect(code).toMatchSnapshot();
   });
 });

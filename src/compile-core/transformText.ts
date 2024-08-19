@@ -1,0 +1,33 @@
+import { NodeType } from "./ast";
+function isText(node: any) {
+  return node.type == NodeType.TEXT || node.type === NodeType.INTERPOLATION;
+}
+export function TransformText(node: any) {
+  if (node.type === NodeType.ELEMENT) {
+    const { children } = node;
+    let currentContainer;
+    for (let i = 0; children && i < children.length; i++) {
+      const child = children[i];
+      if (isText(child)) {
+        for (let j = i + 1; j < children.length; j++) {
+          const next = children[j];
+          if (isText(next)) {
+            if (!currentContainer) {
+              currentContainer = children[i] = {
+                type: NodeType.COMPOUND_EXPRESSION,
+                children: [child],
+              };
+            }
+            currentContainer.children.push(" + ");
+            currentContainer.children.push(next);
+            children.splice(j, 1); // delete next
+            j--;
+          } else {
+            currentContainer = undefined;
+            break;
+          }
+        }
+      }
+    }
+  }
+}

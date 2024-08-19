@@ -9,7 +9,11 @@ export function transformExpression(node: any) {
     node.content = processExpression(node.content);
   }
 }
-
+/**
+ * 给node.content加上_ctx
+ * @param node
+ * @returns
+ */
 function processExpression(node: any) {
   node.content = "_ctx." + node.content;
   return node;

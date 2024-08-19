@@ -1,6 +1,11 @@
 import { NodeType } from "./ast";
-import { helperMapName, TO_DISPLAY_STRING } from "./runtimeHelpers";
+import {
+  CREATE_ELEMENT_VNODE,
+  helperMapName,
+  TO_DISPLAY_STRING,
+} from "./runtimeHelpers";
 import { transformExpression } from "./transformExpression";
+import { isString } from "./../share/index";
 
 export function generator(ast: any) {
   const context = createCodegenContext();
@@ -41,7 +46,7 @@ function createCodegenContext() {
     push(source: string) {
       context.code += source;
     },
-    helper(key:any) {
+    helper(key: any) {
       return `_${helperMapName[key]}`;
     },
   };
@@ -63,21 +68,52 @@ function genNode(node: any, context: any) {
     case NodeType.SIMPLE_EXPRESSION:
       genExpression(node, context);
       break;
+    case NodeType.ELEMENT:
+      genElement(node, context);
+      break;
+    case NodeType.COMPOUND_EXPRESSION:
+      genCompoundExpression(node, context);
+      break;
   }
 }
 function genInterpolation(node: any, context: any) {
   const { push, helper } = context;
-  push(helper(TO_DISPLAY_STRING));  
-  push("(")
+  push(helper(TO_DISPLAY_STRING));
+  push("(");
   genNode(node.content, context);
   push(")");
 }
 
 function genText(node: any, context: any) {
   const { push } = context;
-  push(`'${node.content}'`);
+  push(`"${node.content}"`);
 }
 function genExpression(node: any, context: any) {
   const { push } = context;
   push(`${node.content}`);
 }
+function genElement(node: any, context: any) {
+  const { push, helper } = context;
+  const { tag, children } = node;
+  // push(`${helper(CREATE_ELEMENT_VNODE)}("${tag}")`);
+  push(`${helper(CREATE_ELEMENT_VNODE)}("${tag}"), null,`);
+  children[0] && genNode(children[0], context);
+}
+/**
+ * 产生复合节点的render代码
+ * @param node
+ * @param context
+ */
+function genCompoundExpression(node: any, context: any) {
+  const children = node.children || [];
+  const { push } = context;
+  for (let i = 0; i < children.length; i++) {
+    const child = children[i];
+    if (isString(child)) {
+      push(child);
+    } else {
+      genNode(child, context);
+    }
+  }
+}
+
