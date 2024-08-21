@@ -13,15 +13,15 @@ export function transformElement(node: any, context: any) {
 
     // children
     const children = node.children;
-    let vnodeChildren = children[0];
-
+    let vnodeChildren = children;
+    // create VnodeElement
     const vnodeElement = {
       type: NodeType.ELEMENT,
       tag: vnodeTag,
       props: vnodeProps,
       children: vnodeChildren,
     };
-
+    
     node.codegenNode = vnodeElement;
   }
 }

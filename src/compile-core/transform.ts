@@ -71,9 +71,9 @@ function traverseChildren(node: any, context: any) {
  */
 function createRootCodegen(root: any) {
   const child = root.children[0];
-  // if (child.type === NodeType.ELEMENT) {
-  //   root.codegenNode = child.codegenNode;
-  // } else {
+  if (child.type === NodeType.ELEMENT) {
+    root.codegenNode = child.codegenNode;
+  } else {
     root.codegenNode = child;
-  // }
+  }
 }
