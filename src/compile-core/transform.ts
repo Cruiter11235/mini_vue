@@ -22,7 +22,7 @@ function createTransformContext(root: any, options: any): any {
      * 为helpers添加一个helperAPI key
      * @param key
      */
-    helper(key: symbol) {
+    helper(key: any) {
       context.helpers.set(helperMapName[key], 1);
     },
   };
@@ -35,9 +35,14 @@ function createTransformContext(root: any, options: any): any {
  */
 function traverseNode(node: any, context: any) {
   const nodeTransforms = context.nodeTransforms;
+  const exitFuncs: any = [];
   for (let i = 0; i < nodeTransforms.length; i++) {
     const transformFunc = nodeTransforms[i];
-    transformFunc(node, context);
+    // collect exit function
+    const onExit = transformFunc(node, context);
+    if (onExit) {
+      exitFuncs.push(onExit);
+    }
   }
   switch (node.type) {
     case NodeType.INTERPOLATION:
@@ -49,6 +54,11 @@ function traverseNode(node: any, context: any) {
       break;
     default:
       break;
+  }
+  // execute exitFunc, and delete exitFuncs at same time
+  let i = exitFuncs.length;
+  while (i--) {
+    exitFuncs[i]();
   }
 }
 /**

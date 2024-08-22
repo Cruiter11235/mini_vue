@@ -5,7 +5,6 @@ import { NodeType } from "./ast";
  * @param node
  */
 export function transformExpression(node: any) {
-  console.log("!!!", node);
   if (node.type === NodeType.INTERPOLATION) {
     node.content = processExpression(node.content);
   }

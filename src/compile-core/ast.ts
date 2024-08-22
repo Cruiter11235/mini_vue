@@ -6,3 +6,7 @@ export const enum NodeType {
   ROOT = "root",
   COMPOUND_EXPRESSION = "compound_expression",
 }
+
+export function createVnodeCall(tag:any, props:any, children:any){
+  
+}
