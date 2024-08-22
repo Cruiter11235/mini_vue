@@ -1,7 +1,6 @@
 import { NodeType } from "./ast";
-function isText(node: any) {
-  return node.type == NodeType.TEXT || node.type === NodeType.INTERPOLATION;
-}
+import { isText } from "./util";
+
 export function TransformText(node: any) {
   if (node.type === NodeType.ELEMENT) {
     return () => {

@@ -7,6 +7,11 @@ export const enum NodeType {
   COMPOUND_EXPRESSION = "compound_expression",
 }
 
-export function createVnodeCall(tag:any, props:any, children:any){
-  
+export function createVnodeCall(tag: any, props: any, children: any) {
+  return {
+    type: NodeType.ELEMENT,
+    tag,
+    props,
+    children,
+  };
 }
