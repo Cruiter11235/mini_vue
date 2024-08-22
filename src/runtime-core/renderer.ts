@@ -404,7 +404,10 @@ export function createRenderer(options: any) {
       () => {
         if (!instance.isMounted) {
           const { proxy } = instance;
-          const subTree = (instance.subTree = instance.render.call(proxy));
+          const subTree = (instance.subTree = instance.render.call(
+            proxy,
+            proxy
+          ));
           //   vnode -> patch
           //   vnode -> element
           patch(null, subTree, container, instance, anchor);
@@ -418,7 +421,7 @@ export function createRenderer(options: any) {
             updateComponentRender(instance, next);
           }
           const { proxy } = instance;
-          const subTree = instance.render.call(proxy);
+          const subTree = instance.render.call(proxy, proxy);
           const preSubTree = instance.subTree;
           patch(preSubTree, subTree, container, instance, anchor);
           InitialVnode.el = subTree.el;

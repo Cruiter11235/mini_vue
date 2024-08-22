@@ -45,3 +45,5 @@ export function getSequence(arr: number[]): number[] {
 
   return res;
 }
+
+export * from "./toDisplayString";
